@@ -16,12 +16,10 @@ import (
 	"go.opentelemetry.io/collector/pdata/ptrace"
 )
 
-const (
-	typeStr   = "monitoring"
-	stability = component.StabilityLevelBeta
-)
+var typeStr = component.MustNewType("monitoring") // <- component.Type
 
-// >>> AQUÍ cambia el tipo de retorno y las funciones helper <<<
+const stability = component.StabilityLevelBeta
+
 func NewFactory() exporter.Factory {
 	return exporter.NewFactory(
 		typeStr,
@@ -34,7 +32,6 @@ func NewFactory() exporter.Factory {
 
 func createDefaultConfig() component.Config {
 	return &Config{
-		Settings: exporter.NewSettings(component.NewID(typeStr)),
 		Endpoint: "http://127.0.0.1:8080/ingest",
 		Timeout:  5 * time.Second,
 	}
@@ -42,41 +39,41 @@ func createDefaultConfig() component.Config {
 
 func createTracesExporter(
 	ctx context.Context,
-	set component.ExporterCreateSettings,
+	set exporter.Settings,         // <- NOTA: exporter.Settings
 	cfg component.Config,
-) (component.TracesExporter, error) {
+) (exporter.Traces, error) {      // <- retorna exporter.Traces
 	c := cfg.(*Config)
 	exp, err := newMonitoringExporter(c, set.Logger)
 	if err != nil {
 		return nil, err
 	}
-	return exporterhelper.NewTracesExporter(ctx, set, cfg, exp.pushTraces)
+	return exporterhelper.NewTraces(ctx, set, cfg, exp.pushTraces)
 }
 
 func createMetricsExporter(
 	ctx context.Context,
-	set component.ExporterCreateSettings,
+	set exporter.Settings,
 	cfg component.Config,
-) (component.MetricsExporter, error) {
+) (exporter.Metrics, error) {
 	c := cfg.(*Config)
 	exp, err := newMonitoringExporter(c, set.Logger)
 	if err != nil {
 		return nil, err
 	}
-	return exporterhelper.NewMetricsExporter(ctx, set, cfg, exp.pushMetrics)
+	return exporterhelper.NewMetrics(ctx, set, cfg, exp.pushMetrics)
 }
 
 func createLogsExporter(
 	ctx context.Context,
-	set component.ExporterCreateSettings,
+	set exporter.Settings,
 	cfg component.Config,
-) (component.LogsExporter, error) {
+) (exporter.Logs, error) {
 	c := cfg.(*Config)
 	exp, err := newMonitoringExporter(c, set.Logger)
 	if err != nil {
 		return nil, err
 	}
-	return exporterhelper.NewLogsExporter(ctx, set, cfg, exp.pushLogs)
+	return exporterhelper.NewLogs(ctx, set, cfg, exp.pushLogs)
 }
 
 type monitoringExporter struct {
@@ -98,17 +95,15 @@ func newMonitoringExporter(cfg *Config, lg *zap.Logger) (*monitoringExporter, er
 	}, nil
 }
 
-func (m *monitoringExporter) pushTraces(ctx context.Context, td ptrace.Traces) error {
+func (m *monitoringExporter) pushTraces(_ context.Context, td ptrace.Traces) error {
 	m.logger.Info("monitoring/exporter: traces", zap.Int("spans", td.SpanCount()))
 	return nil
 }
-
-func (m *monitoringExporter) pushMetrics(ctx context.Context, md pmetric.Metrics) error {
+func (m *monitoringExporter) pushMetrics(_ context.Context, md pmetric.Metrics) error {
 	m.logger.Info("monitoring/exporter: metrics", zap.Int("metrics", md.MetricCount()))
 	return nil
 }
-
-func (m *monitoringExporter) pushLogs(ctx context.Context, ld plog.Logs) error {
+func (m *monitoringExporter) pushLogs(_ context.Context, ld plog.Logs) error {
 	m.logger.Info("monitoring/exporter: logs", zap.Int("records", ld.LogRecordCount()))
 	return nil
 }
