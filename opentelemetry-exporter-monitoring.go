@@ -32,7 +32,7 @@ func NewFactory() exporter.Factory {
 
 func createDefaultConfig() component.Config {
 	return &Config{
-		Endpoint: "http://127.0.0.1:8080/ingest",
+		Endpoint: "http://192.168.99.49:8080/ingest",
 		Timeout:  5 * time.Second,
 	}
 }
