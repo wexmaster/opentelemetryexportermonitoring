@@ -21,13 +21,14 @@ const (
 	stability = component.StabilityLevelBeta
 )
 
-func NewFactory() component.ExporterFactory {
-	return component.NewExporterFactory(
+// >>> AQUÍ cambia el tipo de retorno y las funciones helper <<<
+func NewFactory() exporter.Factory {
+	return exporter.NewFactory(
 		typeStr,
 		createDefaultConfig,
-		component.WithTracesExporter(createTracesExporter, stability),
-		component.WithMetricsExporter(createMetricsExporter, stability),
-		component.WithLogsExporter(createLogsExporter, stability),
+		exporter.WithTraces(createTracesExporter, stability),
+		exporter.WithMetrics(createMetricsExporter, stability),
+		exporter.WithLogs(createLogsExporter, stability),
 	)
 }
 
@@ -49,11 +50,7 @@ func createTracesExporter(
 	if err != nil {
 		return nil, err
 	}
-	return exporterhelper.NewTracesExporter(
-		ctx, set, cfg, exp.pushTraces,
-		// opcional:
-		// exporterhelper.WithTimeoutSettings(exporterhelper.TimeoutSettings{Timeout: c.Timeout}),
-	)
+	return exporterhelper.NewTracesExporter(ctx, set, cfg, exp.pushTraces)
 }
 
 func createMetricsExporter(
@@ -66,10 +63,7 @@ func createMetricsExporter(
 	if err != nil {
 		return nil, err
 	}
-	return exporterhelper.NewMetricsExporter(
-		ctx, set, cfg, exp.pushMetrics,
-		// exporterhelper.WithTimeoutSettings(exporterhelper.TimeoutSettings{Timeout: c.Timeout}),
-	)
+	return exporterhelper.NewMetricsExporter(ctx, set, cfg, exp.pushMetrics)
 }
 
 func createLogsExporter(
@@ -82,10 +76,7 @@ func createLogsExporter(
 	if err != nil {
 		return nil, err
 	}
-	return exporterhelper.NewLogsExporter(
-		ctx, set, cfg, exp.pushLogs,
-		// exporterhelper.WithTimeoutSettings(exporterhelper.TimeoutSettings{Timeout: c.Timeout}),
-	)
+	return exporterhelper.NewLogsExporter(ctx, set, cfg, exp.pushLogs)
 }
 
 type monitoringExporter struct {
