@@ -1,4 +1,4 @@
-package github.com/wexmaster/opentelemetryexportermonitoring
+package opentelemetryexportermonitoring
 
 import (
 	"bytes"
