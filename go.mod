@@ -1,11 +1,10 @@
-module github.com/wexmaster/opentelemetryexportermonitoring
+module opentelemetryexportermonitoring // Cambiar por repo si se hace desde en el repo
 
-go 1.24
-
-toolchain go1.24.7
+go 1.24.7
 
 require (
 	go.opentelemetry.io/collector/component v1.41.0
+	go.opentelemetry.io/collector/config/configretry v1.41.0
 	go.opentelemetry.io/collector/exporter v0.135.0
 	go.opentelemetry.io/collector/exporter/exporterhelper v0.135.0
 	go.opentelemetry.io/collector/pdata v1.41.0
@@ -35,7 +34,6 @@ require (
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/collector/client v1.41.0 // indirect
 	go.opentelemetry.io/collector/config/configoptional v0.135.0 // indirect
-	go.opentelemetry.io/collector/config/configretry v1.41.0 // indirect
 	go.opentelemetry.io/collector/confmap v1.41.0 // indirect
 	go.opentelemetry.io/collector/confmap/xconfmap v0.135.0 // indirect
 	go.opentelemetry.io/collector/consumer v1.41.0 // indirect
