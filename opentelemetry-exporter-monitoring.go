@@ -509,8 +509,7 @@ func (m *monitoringExporter) processMetrics(md pmetric.Metrics) ([]byte, error) 
 	if err != nil {
 		return nil, fmt.Errorf("error al transformar métricas: %w", err)
 	}
-
-
+    urlcomose := fmt.Sprintf(("https://mu.%s/v0/ns/%s/metric-sets/%s:addMeasurements"), m.region, m.ns, m.metricsets)
 	return data, nil
 }
 
