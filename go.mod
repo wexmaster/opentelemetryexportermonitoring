@@ -1,4 +1,4 @@
-module opentelemetryexportermonitoring // Cambiar por repo si se hace desde en el repo
+module github.com/wexmaster/opentelemetryexportermonitoring
 
 go 1.24.7
 
