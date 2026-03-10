@@ -14,6 +14,7 @@ import (
 
 	"go.uber.org/zap"
 
+	//	"opentelemetryexportermonitoring/muclient"
 
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/config/configretry"
@@ -76,7 +77,7 @@ func NewFactory() exporter.Factory {
 func createDefaultConfig() component.Config {
 	return &Config{
 		NS:             "user.z123456",
-		Region:         "work-0x.xxxxxx.xxxxxxx",
+		Region:         "work-01.nextgen.igrupobbva",
 		MetricSets:     "opentelemetry_metrics",
 		Traces:         false,
 		Metrics:        false,
@@ -350,6 +351,15 @@ func (m *monitoringExporter) transformTraces(td ptrace.Traces, cfg transformCfg)
 					createUrls = append(createUrls, fmt.Sprintf("https://rho.%s/v1/ns/%s/mrs/%s/spans", regionAtt, nsAtt, mrID)) // Guardar CreateUrl
 
 				}
+				// parentSpan (si existe parentSpanId)
+				// if !sp.ParentSpanID().IsEmpty() {
+				// 	ns := strings.TrimSpace(cfg.UserNamespace)
+				// 	if ns == "" {
+				// 		ns = "ns.unknown"
+				// 	}
+				// 	item.ParentSpan = fmt.Sprintf("ns/%s/mrs/%s/spans/%s", strings.TrimSpace(cfg.UserNamespace), parentSpanAtt, spanHexToUUID(sp.ParentSpanID().String()))
+
+				// }
 				if !sp.ParentSpanID().IsEmpty() {
 					item.ParentSpan = fmt.Sprintf("ns/%s/mrs/%s/spans/%s", nsAtt, parentSpanAtt, spanHexToUUID(sp.ParentSpanID().String()))
 
@@ -509,11 +519,16 @@ func (m *monitoringExporter) processMetrics(md pmetric.Metrics) ([]byte, error) 
 	if err != nil {
 		return nil, fmt.Errorf("error al transformar métricas: %w", err)
 	}
-    urlcomose := fmt.Sprintf(("https://mu.%s/v0/ns/%s/metric-sets/%s:addMeasurements"), m.region, m.ns, m.metricsets)
+
+	// Imprimir el resultado transformado para depuracion
+	//fmt.Printf("Transformed Metrics JSON: %s\n", string(data))
 	return data, nil
 }
 
 func (m *monitoringExporter) pushMetrics(ctx context.Context, md pmetric.Metrics) error {
+	// if m.metricsURL == "" {
+	// 	return nil
+	// }
 	if !m.metrics { // Verificar si el envío de metricas esta habilitado
 		m.logger.Sugar().Warnln("El envío de métricas está deshabilitado, no se realizará el POST.")
 		return nil
@@ -524,7 +539,10 @@ func (m *monitoringExporter) pushMetrics(ctx context.Context, md pmetric.Metrics
 	if err != nil {
 		return err
 	}
-
+	// Log claro del JSON que realmente enviamos
+	//fmt.Printf("Metrics JSON to send: %s\n", string(data))
+	urlcomose := fmt.Sprintf(("https://mu.%s/v0/ns/%s/metric-sets/%s:addMeasurements"), m.region, m.ns, m.metricsets)
+	//Test()
 	// Enviar los datos procesados a postJSON
 	return m.postJSON(ctx, urlcomose, data)
 }
@@ -679,6 +697,8 @@ func (m *monitoringExporter) transformLogs(ld plog.Logs, cfg transformCfg) ([]by
 
 				// Generar CreateUrl si es necesario
 				if regionAtt != "" && regionAtt != "unknown" && nsAtt != "" && nsAtt != "unknown" {
+					//createUrl := fmt.Sprintf("https://logs.example.com/v1/ns/%s/logs", cfg.UserNamespace)
+					//transformedLog.CreateUrl = createUrl
 					createUrls = append(createUrls, fmt.Sprintf("https://omega.%s/v1/ns/%s/logs", regionAtt, nsAtt))
 
 				}
@@ -697,6 +717,20 @@ func (m *monitoringExporter) transformLogs(ld plog.Logs, cfg transformCfg) ([]by
 	return data, createUrls, nil
 }
 
+// func (m *monitoringExporter) pushLogs(ctx context.Context, ld plog.Logs) error {
+// 	if m.logsURL == "" {
+// 		return nil
+// 	}
+
+// 	// Procesar los logs antes de enviarlos
+// 	data, err := m.processLogs(ld)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	// Enviar los datos procesados a postJSON
+// 	return m.postJSON(ctx, m.logsURL, data)
+// }
 
 func (m *monitoringExporter) pushLogs(ctx context.Context, ld plog.Logs) error {
 	// if m.logsURL == "" {
@@ -713,6 +747,13 @@ func (m *monitoringExporter) pushLogs(ctx context.Context, ld plog.Logs) error {
 		return err
 	}
 
+	// Imprimir las CreateUrls
+	// for _, url := range createUrls {
+	// 	fmt.Printf("CreateUrl: %s\n", url)
+	// }
+
+	// Log claro del JSON que realmente enviamos
+	//fmt.Printf("Custom Logs JSON to send >>> %s\n", string(out))
 	// Deserializar `out` (JSON) a un slice de `transformedLog`
 	var logs []transformedLog
 	if err := json.Unmarshal(out, &logs); err != nil {
@@ -740,14 +781,36 @@ func (m *monitoringExporter) pushLogs(ctx context.Context, ld plog.Logs) error {
 	return nil
 }
 
+// func (m *monitoringExporter) postJSON(ctx context.Context, url string, body []byte) error {
+// 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+// 	if err != nil {
+// 		return err
+// 	}
+// 	// Content-Type por defecto + override por headers
+// 	req.Header.Set("Content-Type", "application/json")
+// 	for k, v := range m.headers {
+// 		req.Header.Set(k, v)
+// 	}
+// 	resp, err := m.client.Do(req)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	defer resp.Body.Close()
 
+//		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+//			// Devolvemos error para que exporterhelper aplique backoff/retry según config
+//			return fmt.Errorf("monitoring exporter: %s -> HTTP %d", url, resp.StatusCode)
+//		}
+//		// Log de depuración (volumen bajo)
+//		m.logger.Debug("monitoring/exporter POST OK", zap.String("url", url), zap.Int("status", resp.StatusCode), zap.Int("bytes", len(body)))
+//		return nil
+//	}
 func (m *monitoringExporter) postJSON(ctx context.Context, url string, body []byte) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
 	if err != nil {
 		m.logFailedRequest(err, url, body)
 		return err
 	}
-
 
 	req.Header.Set("Content-Type", "application/json")
 	for k, v := range m.headers {
